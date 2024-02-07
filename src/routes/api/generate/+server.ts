@@ -30,12 +30,15 @@ export async function GET({url})
 
                         let reply = new TextDecoder().decode(value);
                         let obj = JSON.parse(reply);
+
+
                         let result= 
                         {
                             response : obj.response,
-                            done : obj.done
+                            done : obj.done,
+                            duration : obj.total_duration ?? -1
                         }
-                        console.dir(result.response);
+                        console.dir(obj);
                         sendData(controller,result);
                         return reader.read().then(pump);
                     });

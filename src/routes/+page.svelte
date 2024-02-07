@@ -86,6 +86,7 @@
                 if (obj.done) 
                 {
                     answerBlock.busy = false;
+                    answerBlock.comment = 'Evaluation took ' + Math.floor(Number.parseInt(obj.duration) / 1000_000_000) + " seconds";
                     blocks = blocks;
                     busy = false;
                     // Do something with last chunk of data then exit reader
@@ -150,6 +151,15 @@
                     {token.content}
                 </span>
             {/each}
+
+            {#if block.comment != undefined}
+                <br>
+                <span class="comment">
+                    <i>
+                        {block.comment}
+                    </i>
+                </span>
+            {/if}
         </p>
     {/each}
 </div>
@@ -160,6 +170,11 @@
 </div>
 
 <style>
+    .comment
+    {
+        opacity: 20%;
+    }
+
     .inactive
     {
         background-color: grey;
