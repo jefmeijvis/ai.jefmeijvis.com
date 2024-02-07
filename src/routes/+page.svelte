@@ -95,7 +95,18 @@
                 return reader.read().then(pump);
                 });
             })
-            .catch((err) => console.error(err));
+            .catch(onError);
+    }
+
+    function onError(error : any)
+    {
+        busy = false;
+        blocks[blocks.length -1].busy = false;
+        let token : Token = {} as Token;
+        token.content = "[ERROR]";
+        blocks[blocks.length -1].tokens.push(token);
+        blocks = blocks;
+        console.error(error)
     }
 
     async function cancel()
