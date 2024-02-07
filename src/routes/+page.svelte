@@ -11,7 +11,7 @@
     startBlock.type = 'answer';
 
     let startToken = {} as Token
-    startToken.content = "Ask a question!"
+    startToken.content = "Stel een vraag! Door de huidige infrastructuur is de maximale duur van een antwoord 10 seconden."
     startBlock.tokens = new Array<Token>();
     startBlock.tokens.push(startToken)
     startBlock.busy = false;
