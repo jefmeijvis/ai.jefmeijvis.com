@@ -31,7 +31,7 @@
         signal = controller.signal;
 
         console.log("START GENERATE")
-        let url : string = "https://ollama--4ghoj32.blueplant-2325db26.westeurope.azurecontainerapps.io/api/generate";
+        let url : string = "/api/generate?prompt=" + question;
 
         let block : Block = {} as Block;
         block.type = 'question';
@@ -43,20 +43,11 @@
         blocks.push(block);
         blocks = blocks;
 
-        let body = 
-        {
-            'model' : 'llama2',
-            'prompt' : question,
-        }
-
-
         let requestInit : RequestInit = 
         {
-            method : 'POST',
-            body : JSON.stringify(body),
+            method : 'GET',
             signal: signal, // <------ This is our AbortSignal
         };
-
 
         let answerBlock : Block = {} as Block;
         answerBlock.type = 'answer';
@@ -76,6 +67,7 @@
                 //@ts-ignore
                 reader.read().then(function pump({ done, value }) 
                 {
+
                 if (done) 
                 {
                     answerBlock.busy = false;
@@ -85,8 +77,20 @@
                     return;
                 }
                 let token : Token = {} as Token;
+
                 let reply = new TextDecoder().decode(value);
-                let obj = JSON.parse(reply)
+                reply = reply.replace('data:','');
+                console.dir(reply)
+                let obj = JSON.parse(reply);
+  
+                if (obj.done) 
+                {
+                    answerBlock.busy = false;
+                    blocks = blocks;
+                    busy = false;
+                    // Do something with last chunk of data then exit reader
+                    return;
+                }
                 //@ts-ignore
                 token.content = obj.response;
                 blocks.at(-1)?.tokens.push(token);
@@ -130,7 +134,7 @@
 </script>
 
 <div class="header">
-    <h1>LLama 2</h1>
+    <h1>dotNET lab GPT</h1>
 </div>
 <div class="chat">
     {#each blocks as block}
@@ -150,7 +154,7 @@
     {/each}
 </div>
 <div class="controls">
-    <textarea placeholder="Enter your question here" rows="10" bind:value={question}/>
+    <textarea placeholder="Enter your question here" bind:value={question}/>
     <button on:click={generate}>Generate</button>
     <button class:inactive={!busy} on:click={cancel}>Cancel</button>
 </div>
@@ -195,12 +199,22 @@
         margin: auto;
     }
 
+    .chat
+    {
+        margin-top: .5rem;
+        border-radius: .5rem;
+        margin-bottom: .5rem;
+        height: 70vh;
+        overflow-y: auto;
+    }
+
     textarea
     {
         width: calc(100% - 1rem);
         border: 1px var(--color-blue) solid;
         border-radius: .5rem;
         padding: .5rem;
+        background: white;
     }
 
     textarea:focus
