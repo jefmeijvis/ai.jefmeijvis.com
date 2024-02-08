@@ -83,6 +83,13 @@
                 console.dir(reply)
                 let obj = JSON.parse(reply);
   
+
+                //@ts-ignore
+                token.content = obj.response;
+                blocks.at(-1)?.tokens.push(token);
+                // Read some more, and call this function again
+                blocks = blocks;
+
                 if (obj.done) 
                 {
                     answerBlock.busy = false;
@@ -92,11 +99,7 @@
                     // Do something with last chunk of data then exit reader
                     return;
                 }
-                //@ts-ignore
-                token.content = obj.response;
-                blocks.at(-1)?.tokens.push(token);
-                // Read some more, and call this function again
-                blocks = blocks;
+
                 return reader.read().then(pump);
                 });
             })
@@ -111,7 +114,7 @@
         token.content = "[ERROR]";
         blocks[blocks.length -1].tokens.push(token);
         blocks = blocks;
-        console.error(error)
+        console.log(error)
     }
 
     async function cancel()
@@ -125,7 +128,15 @@
             blocks[blocks.length -1].tokens[blocks[blocks.length -1].tokens.length -1].content += " [GEANNULEERD]"
             blocks = blocks;
             busy = false;
-            controller.abort();
+            if(controller.signal.aborted)
+            {
+                console.log("Request signal was already aborted");
+            }
+            else
+            {
+                controller.abort();
+                console.log("Request signal is now aborted")
+            }
         }
         catch(e)
         {

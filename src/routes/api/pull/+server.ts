@@ -1,20 +1,17 @@
 import {PRIVATE_CONTAINER_BASE_URL} from '$env/static/private'
-
-const base_url : string = PRIVATE_CONTAINER_BASE_URL + '/api/generate'
+const base_url : string = PRIVATE_CONTAINER_BASE_URL + '/api/pull'
 let headers = {'content-type': 'text/event-stream'}
 let ac = new AbortController();
-
-
 
 export async function GET({url}) 
 {
     // Get request details
-    let model = 'llama2';
-    let prompt = url.searchParams.get('prompt') ?? "";
+    let model = url.searchParams.get('model') ?? "";
 
     // Get request init and body
-    let body : any = getBody(model,prompt);
+    let body : any = getBody(model);
     let requestInit = getRequestInit(body,ac.signal);
+    console.log("Received request for model " + model);
 
     ac = new AbortController();
 	const readable = new ReadableStream(
@@ -28,37 +25,28 @@ export async function GET({url})
                     const reader = response.body.getReader();
                     reader.read().then(function pump({ done, value }) : any
                     {
-                        console.log("START PUMP")
                         if(done)
-                        {
-                            console.log("Request was done")
                             return;
-                        }
 
-                        if(ac.signal.aborted)
-                        {
-                            console.log("Request was already aborted, no need to pump")
-                            return;
-                        }
-
-                        
                         let reply = new TextDecoder().decode(value);
-                        let obj = JSON.parse(reply);
-
-                        let result = {};
-
-
-                        if(obj.error)
+                        let obj : any = {};
+                        try
                         {
-                            console.log('ERROR RESPONSE FROM CONTAINER: ' + obj.error);
+                            obj = JSON.parse(reply);
+
+                        }
+                        catch(e)
+                        {
+                            console.dir(e);
+                            console.dir(reply)
                         }
 
-
-                        result= 
+                        let result= 
                         {
-                            response : obj.response ?? obj.error ?? "",
-                            done : obj.done ?? true,
-                            duration : obj.total_duration ?? -1
+                            status : obj.status,
+                            digest : obj.digest,
+                            total : obj.total,
+                            completed : obj.completed
                         }
 
                         sendData(controller,result);
@@ -66,13 +54,10 @@ export async function GET({url})
                     });
                 });
             },
-            cancel(controller) 
+            cancel() 
             {
-                console.log("START CANCEL")
                 if(!ac.signal.aborted)
-                    ac.abort();
-
-                console.log("Cancel");
+                    ac.abort()
             }
     });
 
@@ -88,11 +73,10 @@ function getRequestInit(body : any, signal : any) : RequestInit
     }
 }
 
-function getBody(model : string, prompt : string)
+function getBody(model : string)
 {
     return {
         'model' : model,
-        'prompt' :  prompt,
     }
 }
 
